@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jacky Cool - AI Voice Interface</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #ffffff;
+            --accent-color: #00d2ff;
+            --success-color: #00ff88;
+            --error-color: #ff3366;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Fullscreen Video Background */
+        #assistantVideo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            transition: filter 0.5s ease;
+        }
+
+        /* Darkening Overlay for readability */
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Main UI Layer (Standby Screen) */
+        .ui-layer {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+
+        /* --- BLANK WHITE MAIN PAGE --- */
+        #mainWindow {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #ffffff;
+            z-index: 9999;
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #emptySpace {
+            flex-grow: 1;
+            transition: all 0.5s ease;
+        }
+
+        /* --- BOTTOM CONTROLS --- */
+        .controls-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0 30px 0;
+            margin-top: auto;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            text-align: center;
+            min-height: 25px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            padding: 0 10px;
+        }
+
+        .button-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #141e30, #243b55);
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            width: 75px;
+            height: 75px;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn:active { transform: scale(0.92); }
+
+        .mic-btn.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border-color: #ff4b2b;
+            box-shadow: 0 0 30px rgba(255, 75, 43, 0.6);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7); }
+            70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(255, 75, 43, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+        }
+
+        @media (min-width: 768px) {
+            .ui-layer { padding: 40px; }
+            .mic-btn { width: 80px; height: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+    <video id="assistantVideo" autoplay loop muted playsinline></video>
+    <div class="video-overlay"></div>
+
+    <div id="mainWindow"></div>
+
+    <div class="ui-layer">
+        <div id="emptySpace"></div>
+        <div class="controls-container">
+            <div id="statusText" class="status-text">System Standby</div>
+            <div class="button-group">
+                <button id="micBtn" class="mic-btn" title="Click to interact">🎙️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SYSTEM CONFIGURATION ---
+        let isSystemLocked = true;
+        let failedAttempts = 0; 
+        
+        // --- PAS@ ---
+        // 
+        //
+        const _0xPwdArray = [
+            [104, 105, 32, 105, 32, 97, 109, 32, 106, 97, 99, 107, 105, 101, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108], // 
+            [104, 105, 32, 105, 109, 32, 106, 97, 99, 107, 105, 101, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108],         //
+            [104, 105, 32, 105, 32, 97, 109, 32, 106, 97, 99, 107, 121, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108],    // 
+            [104, 105, 32, 105, 109, 32, 106, 97, 99, 107, 121, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108]             // 
+        ];
+        const validPasswords = _0xPwdArray.map(arr => String.fromCharCode(...arr));
+
+        const videoLibrary = {
+            locked: 'https://cdn.pixabay.com/video/2020/07/22/45366-443152204_tiny.mp4',       
+            askPassword_voice: 'firstvideo.mp4',                                             
+            accessGranted: 'secondvideo.mp4',
+            accessDenied: 'thirdvideo.mp4',    
+            accessDeniedMax: 'fourthvideo.mp4',                
+            listening: 'https://cdn.pixabay.com/video/2020/05/11/38838-422176495_tiny.mp4'
+        };
+
+        const videoElement = document.getElementById('assistantVideo');
+        const overlayElement = document.querySelector('.video-overlay');
+        const statusText = document.getElementById('statusText');
+        const micBtn = document.getElementById('micBtn');
+        const mainWindow = document.getElementById('mainWindow');
+        const emptySpace = document.getElementById('emptySpace');
+
+        let currentVideoState = '';
+
+        function setVideoState(state) {
+            if (currentVideoState === state) return;
+            currentVideoState = state;
+
+            if (state === 'none') {
+                videoElement.style.display = 'none';
+                overlayElement.style.display = 'none';
+                videoElement.pause();
+                return;
+            }
+
+            videoElement.style.display = 'block';
+            overlayElement.style.display = 'block';
+            videoElement.src = videoLibrary[state];
+            
+            // Set accessDenied to loop = false so it plays once
+            if (state.startsWith('askPassword') || state === 'accessGranted' || state === 'accessDenied' || state === 'accessDeniedMax') {
+                videoElement.muted = false; 
+                videoElement.loop = false;  
+            } else {
+                videoElement.muted = true;  
+                videoElement.loop = true;
+            }
+            
+            videoElement.play().catch(e => console.log("Video Play Error:", e));
+        }
+
+        // Initialize background continuous video stream
+        setVideoState('locked');
+
+        // Video Lifecycle Event Listeners
+        videoElement.addEventListener('ended', () => {
+            if (currentVideoState === 'accessGranted') {
+                unlockSystemPage();
+            } else if (currentVideoState === 'accessDenied' || currentVideoState === 'accessDeniedMax') {
+                // When accessDenied video finishes playing once, lock the system
+                lockSystem();
+            }
+        });
+
+        videoElement.addEventListener('error', () => {
+            if (currentVideoState === 'accessGranted') {
+                unlockSystemPage();
+            }
+        });
+
+        function unlockSystemPage() {
+            isSystemLocked = false;
+            emptySpace.style.display = 'none';
+            mainWindow.style.display = 'block';
+            statusText.innerText = ""; 
+            micBtn.style.display = 'none'; 
+            setVideoState('none');
+        }
+
+        // --- 2. MICROPHONE ACTIVATION & PERMISSIONS ---
+        async function requestMicrophoneAccess() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error("Microphone access denied:", err);
+                statusText.innerText = "Microphone Permission Required";
+                statusText.style.color = "var(--error-color)";
+                return false;
+            }
+        }
+
+        // --- 3. SPEECH RECOGNITION (VOICE INPUT) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 5; 
+
+            recognition.onstart = () => {
+                statusText.innerText = "Listening...";
+                statusText.style.color = "var(--accent-color)";
+                micBtn.classList.add('listening');
+            };
+
+            recognition.onspeechend = () => {
+                recognition.stop();
+                micBtn.classList.remove('listening');
+            };
+
+            recognition.onresult = (event) => {
+                if (isSystemLocked) {
+                    statusText.innerText = `Analyzing Voice...`;
+                    let isMatchFound = false;
+                    
+                    for (let i = 0; i < event.results[0].length; i++) {
+                        let alt = event.results[0][i].transcript.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " ");
+                        if (validPasswords.some(pwd => alt.includes(pwd) || alt === pwd)) {
+                            isMatchFound = true;
+                            break;
+                        }
+                    }
+
+                    if (isMatchFound) {
+                        failedAttempts = 0;
+                        statusText.innerText = "Authentication Successful.";
+                        statusText.style.color = "var(--success-color)";
+                        setVideoState('accessGranted');
+                    } else {
+                        failedAttempts++;
+                        if (failedAttempts >= 3) {
+                            statusText.innerText = "Maximum attempts reached. Intruder detected.";
+                            statusText.style.color = "var(--error-color)";
+                            setVideoState('accessDeniedMax');
+                            failedAttempts = 0;
+                        } else {
+                            // Clear text so it plays "without any saying"
+                            statusText.innerText = "";
+                            
+                            // Play thirdvideo.mp4 (accessDenied state) exactly once
+                            setVideoState('accessDenied');
+                        }
+                    }
+                } else {
+                    const transcript = event.results[0][0].transcript.toLowerCase();
+                    const cleanCommand = transcript.replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " "); 
+                    processCommand(cleanCommand);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                statusText.innerText = 'Audio lost or timed out.';
+                statusText.style.color = 'var(--error-color)';
+                micBtn.classList.remove('listening');
+                setTimeout(() => {
+                    statusText.innerText = isSystemLocked ? "System Standby" : "";
+                    statusText.style.color = "rgba(255, 255, 255, 0.7)";
+                    if (isSystemLocked && currentVideoState !== 'accessGranted' && currentVideoState !== 'accessDenied') {
+                        setVideoState('locked');
+                    }
+                }, 2000);
+            };
+        } else {
+            statusText.innerText = "Speech recognition unsupported on this browser.";
+        }
+
+        // --- 4. IMMEDIATE VOICE ACTIVATION ON CLICK ---
+        micBtn.addEventListener('click', async () => {
+            if (!recognition) {
+                alert("Voice Engine is unsupported on this browser.");
+                return;
+            }
+
+            // Unmute media context on user gesture & get mic permissions automatically
+            const micPermitted = await requestMicrophoneAccess();
+            if (!micPermitted) return;
+
+            if (isSystemLocked) {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                statusText.innerText = "Authenticating...";
+                statusText.style.color = "var(--accent-color)";
+                
+                // Play interaction video & activate microphone immediately
+                setVideoState('askPassword_voice');
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log("Recognition active state error:", e);
+                }
+            } else {
+                try { 
+                    recognition.start(); 
+                } catch (e) { 
+                    console.log("Recognition error:", e); 
+                }
+            }
+        });
+
+        // --- 5. COMMAND ENGINE & LOCK CONTROL ---
+        function processCommand(command) {
+            if (command.includes("lock system") || command.includes("close pc") || command.includes("lock workspace")) {
+                lockSystem();
+            } else {
+                statusText.innerText = "Command received.";
+            }
+        }
+
+        function lockSystem() {
+            isSystemLocked = true;
+            emptySpace.style.display = 'block';
+            mainWindow.style.display = 'none';
+            micBtn.style.display = 'flex'; 
+            statusText.innerText = "System Standby";
+            statusText.style.color = "rgba(255, 255, 255, 0.7)";
+            setVideoState('locked'); 
+        }
+    </script>
+</body>
+</html>
