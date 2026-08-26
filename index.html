@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>RIZZO - Personal Voice Assistant</title>
+    <title>Jacky Cool - AI Voice Interface</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -17,8 +17,7 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            /* Use standard 100% for body/html to prevent iOS scrolling bugs */
-            height: 100%; 
+            height: 100%;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -26,20 +25,20 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Fullscreen Video Background - Simplified for better mobile scaling */
+        /* Video Background */
         #assistantVideo {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            height: 100dvh;
             z-index: 1;
             object-fit: cover;
             transition: filter 0.5s ease;
         }
 
-        /* Darkening Overlay for readability */
+        /* Overlay */
         .video-overlay {
             position: fixed;
             top: 0;
@@ -52,21 +51,19 @@
             pointer-events: none;
         }
 
-        /* Main UI Layer (Standby Screen) */
+        /* UI Container */
         .ui-layer {
             position: relative;
             z-index: 3;
             width: 100%;
-            height: 100vh; /* Fallback */
-            height: 100dvh; /* Accounts for mobile browser navigation bars */
+            height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            /* Safe area padding for phones with notches/cutouts */
             padding: max(15px, env(safe-area-inset-top)) max(15px, env(safe-area-inset-right)) max(15px, env(safe-area-inset-bottom)) max(15px, env(safe-area-inset-left));
         }
 
-        /* --- BLANK WHITE MAIN PAGE --- */
         #mainWindow {
             display: none;
             position: fixed;
@@ -90,7 +87,6 @@
             transition: all 0.5s ease;
         }
 
-        /* --- BOTTOM CONTROLS --- */
         .controls-container {
             width: 100%;
             display: flex;
@@ -120,41 +116,73 @@
             max-width: 320px;
         }
 
-        .mic-btn {
-            background: linear-gradient(135deg, #141e30, #243b55);
-            border: 2px solid var(--accent-color);
+        /* Base Round Button Styling */
+        .round-btn {
             border-radius: 50%;
-            width: 75px;
-            height: 75px;
+            width: 70px;
+            height: 70px;
             color: white;
-            font-size: 28px;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation; /* Removes double-tap zoom delay on mobile */
+            touch-action: manipulation;
+            border: 2px solid var(--accent-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
         }
 
-        .mic-btn:active { transform: scale(0.92); }
+        .round-btn:active {
+            transform: scale(0.92);
+        }
 
-        .mic-btn.listening {
-            animation: pulse 1.5s infinite;
+        /* Animated GO Button */
+        .go-btn {
+            background: linear-gradient(135deg, #141e30, #243b55);
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            animation: pulse-go 1.8s infinite;
+        }
+
+        @keyframes pulse-go {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7); }
+            70% { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(0, 212, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+        }
+
+        /* Authenticate Mic Button */
+        .auth-btn {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            border-color: #00ff88;
+            font-size: 26px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .auth-btn.listening {
+            animation: pulse-mic 1.5s infinite;
             background: linear-gradient(135deg, #ff416c, #ff4b2b);
             border-color: #ff4b2b;
             box-shadow: 0 0 30px rgba(255, 75, 43, 0.6);
         }
 
-        @keyframes pulse {
+        @keyframes pulse-mic {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7); }
             70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(255, 75, 43, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         @media (min-width: 768px) {
             .ui-layer { padding: 40px; }
-            .mic-btn { width: 80px; height: 80px; }
+            .round-btn { width: 80px; height: 80px; }
+            .go-btn { font-size: 20px; }
+            .auth-btn { font-size: 30px; }
         }
     </style>
 </head>
@@ -170,17 +198,18 @@
         <div class="controls-container">
             <div id="statusText" class="status-text">System Standby</div>
             <div class="button-group">
-                <button id="micBtn" class="mic-btn" title="Click to interact">🎙️</button>
+                <button id="goBtn" class="round-btn go-btn" title="Click to Start">GO</button>
+                <button id="authBtn" class="round-btn auth-btn hidden" title="Click to Authenticate">🎙️</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. SYSTEM CONFIGURATION ---
         let isSystemLocked = true;
         let failedAttempts = 0; 
+        let authTimer = null;
+        let hasMicPermission = false; // Flag to ensure browser prompts only once
         
-        // --- PAS@ ---
         const _0xPwdArray = [
             [104, 105, 32, 105, 32, 97, 109, 32, 106, 97, 99, 107, 105, 101, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108], 
             [104, 105, 32, 105, 109, 32, 106, 97, 99, 107, 105, 101, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108],         
@@ -201,7 +230,8 @@
         const videoElement = document.getElementById('assistantVideo');
         const overlayElement = document.querySelector('.video-overlay');
         const statusText = document.getElementById('statusText');
-        const micBtn = document.getElementById('micBtn');
+        const goBtn = document.getElementById('goBtn');
+        const authBtn = document.getElementById('authBtn');
         const mainWindow = document.getElementById('mainWindow');
         const emptySpace = document.getElementById('emptySpace');
 
@@ -222,7 +252,6 @@
             overlayElement.style.display = 'block';
             videoElement.src = videoLibrary[state];
             
-            // Set accessDenied to loop = false so it plays once
             if (state.startsWith('askPassword') || state === 'accessGranted' || state === 'accessDenied' || state === 'accessDeniedMax') {
                 videoElement.muted = false; 
                 videoElement.loop = false;  
@@ -234,15 +263,12 @@
             videoElement.play().catch(e => console.log("Video Play Error:", e));
         }
 
-        // Initialize background continuous video stream
         setVideoState('locked');
 
-        // Video Lifecycle Event Listeners
         videoElement.addEventListener('ended', () => {
             if (currentVideoState === 'accessGranted') {
                 unlockSystemPage();
             } else if (currentVideoState === 'accessDenied' || currentVideoState === 'accessDeniedMax') {
-                // When accessDenied video finishes playing once, lock the system
                 lockSystem();
             }
         });
@@ -258,15 +284,19 @@
             emptySpace.style.display = 'none';
             mainWindow.style.display = 'block';
             statusText.innerText = ""; 
-            micBtn.style.display = 'none'; 
+            goBtn.classList.add('hidden');
+            authBtn.classList.add('hidden'); 
             setVideoState('none');
         }
 
-        // --- 2. MICROPHONE ACTIVATION & PERMISSIONS ---
+        // ONE-TIME PERMISSION LOGIC
         async function requestMicrophoneAccess() {
+            if (hasMicPermission) return true; // Skip browser prompt if already allowed this session
+            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
+                hasMicPermission = true; // Mark as permitted
                 return true;
             } catch (err) {
                 console.error("Microphone access denied:", err);
@@ -276,7 +306,6 @@
             }
         }
 
-        // --- 3. SPEECH RECOGNITION (VOICE INPUT) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
@@ -290,12 +319,12 @@
             recognition.onstart = () => {
                 statusText.innerText = "Listening...";
                 statusText.style.color = "var(--accent-color)";
-                micBtn.classList.add('listening');
+                authBtn.classList.add('listening');
             };
 
             recognition.onspeechend = () => {
                 recognition.stop();
-                micBtn.classList.remove('listening');
+                authBtn.classList.remove('listening');
             };
 
             recognition.onresult = (event) => {
@@ -324,10 +353,7 @@
                             setVideoState('accessDeniedMax');
                             failedAttempts = 0;
                         } else {
-                            // Clear text so it plays "without any saying"
                             statusText.innerText = "";
-                            
-                            // Play thirdvideo.mp4 (accessDenied state) exactly once
                             setVideoState('accessDenied');
                         }
                     }
@@ -341,12 +367,10 @@
             recognition.onerror = (event) => {
                 statusText.innerText = 'Audio lost or timed out.';
                 statusText.style.color = 'var(--error-color)';
-                micBtn.classList.remove('listening');
+                authBtn.classList.remove('listening');
                 setTimeout(() => {
-                    statusText.innerText = isSystemLocked ? "System Standby" : "";
-                    statusText.style.color = "rgba(255, 255, 255, 0.7)";
                     if (isSystemLocked && currentVideoState !== 'accessGranted' && currentVideoState !== 'accessDenied') {
-                        setVideoState('locked');
+                        lockSystem();
                     }
                 }, 2000);
             };
@@ -354,14 +378,26 @@
             statusText.innerText = "Speech recognition unsupported on this browser.";
         }
 
-        // --- 4. IMMEDIATE VOICE ACTIVATION ON CLICK ---
-        micBtn.addEventListener('click', async () => {
+        /* --- GO BUTTON CLICK FLOW --- */
+        goBtn.addEventListener('click', () => {
+            statusText.innerText = "";
+            goBtn.classList.add('hidden');
+            setVideoState('askPassword_voice');
+
+            clearTimeout(authTimer);
+            authTimer = setTimeout(() => {
+                authBtn.classList.remove('hidden');
+            }, 5500);
+        });
+
+        /* --- AUTHENTICATE BUTTON CLICK FLOW --- */
+        authBtn.addEventListener('click', async () => {
             if (!recognition) {
                 alert("Voice Engine is unsupported on this browser.");
                 return;
             }
 
-            // Unmute media context on user gesture & get mic permissions automatically
+            // Checks permission once; skips popup on subsequent clicks
             const micPermitted = await requestMicrophoneAccess();
             if (!micPermitted) return;
 
@@ -370,8 +406,6 @@
                 statusText.innerText = "Authenticating...";
                 statusText.style.color = "var(--accent-color)";
                 
-                // Play interaction video & activate microphone immediately
-                setVideoState('askPassword_voice');
                 try {
                     recognition.start();
                 } catch (e) {
@@ -386,7 +420,6 @@
             }
         });
 
-        // --- 5. COMMAND ENGINE & LOCK CONTROL ---
         function processCommand(command) {
             if (command.includes("lock system") || command.includes("close pc") || command.includes("lock workspace")) {
                 lockSystem();
@@ -396,10 +429,15 @@
         }
 
         function lockSystem() {
+            clearTimeout(authTimer);
             isSystemLocked = true;
             emptySpace.style.display = 'block';
             mainWindow.style.display = 'none';
-            micBtn.style.display = 'flex'; 
+            
+            goBtn.classList.remove('hidden');
+            authBtn.classList.add('hidden');
+            authBtn.classList.remove('listening');
+            
             statusText.innerText = "System Standby";
             statusText.style.color = "rgba(255, 255, 255, 0.7)";
             setVideoState('locked'); 
