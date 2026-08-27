@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Rizzo - Personal Voice Assistant </title>
+    <title>Jacky Cool - AI Voice Interface</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -11,6 +11,9 @@
             --accent-color: #00d2ff;
             --success-color: #00ff88;
             --error-color: #ff3366;
+            --red-bar-bg: #c91414; /* Matches screenshot red */
+            --red-bar-dark: #630505;
+            --cyan-text: #00ffff; /* Matches screenshot text */
         }
 
         body, html {
@@ -35,10 +38,11 @@
             height: 100dvh;
             z-index: 1;
             object-fit: cover;
+            object-position: center center;
             transition: filter 0.5s ease;
         }
 
-        /* Overlay */
+        /* Ambient Overlay */
         .video-overlay {
             position: fixed;
             top: 0;
@@ -46,7 +50,7 @@
             width: 100vw;
             height: 100vh;
             height: 100dvh;
-            background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+            background: radial-gradient(circle, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.8) 100%);
             z-index: 2;
             pointer-events: none;
         }
@@ -78,8 +82,8 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         #emptySpace {
@@ -87,24 +91,14 @@
             transition: all 0.5s ease;
         }
 
+        /* Modern Control Panel */
         .controls-container {
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px 0 30px 0;
-            margin-top: auto;
-        }
-
-        .status-text {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            text-align: center;
-            min-height: 25px;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 400;
-            padding: 0 10px;
+            justify-content: center;
+            padding-bottom: 40px;
         }
 
         .button-group {
@@ -113,76 +107,113 @@
             justify-content: center;
             gap: 20px;
             width: 100%;
-            max-width: 320px;
         }
 
-        /* Base Round Button Styling */
-        .round-btn {
+        /* Animated GO Button */
+        .go-btn {
             border-radius: 50%;
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: manipulation;
-            border: 2px solid var(--accent-color);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
+            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(135deg, #141e30, #243b55);
+            border: 2px solid var(--accent-color);
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            animation: pulse-go 2s infinite;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .round-btn:active {
+        .go-btn:active {
             transform: scale(0.92);
         }
 
-        /* Animated GO Button */
-        .go-btn {
-            background: linear-gradient(135deg, #141e30, #243b55);
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-            animation: pulse-go 1.8s infinite;
-        }
-
         @keyframes pulse-go {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7); }
-            70% { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(0, 212, 255, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.6); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(0, 212, 255, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
         }
 
-        /* Authenticate Mic Button */
-        .auth-btn {
-            background: linear-gradient(135deg, #00b09b, #96c93d);
-            border-color: #00ff88;
-            font-size: 26px;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-            animation: fadeIn 0.5s ease forwards;
+        /* --- Custom Red Progress Bar (Based on Uploaded Images) --- */
+        .red-progress-bar {
+            background-color: var(--red-bar-bg);
+            border: 4px solid var(--red-bar-dark);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 25px;
+            gap: 20px;
+            min-width: 320px;
+            max-width: 90%;
+            border-radius: 4px;
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
-        .auth-btn.listening {
-            animation: pulse-mic 1.5s infinite;
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
-            border-color: #ff4b2b;
-            box-shadow: 0 0 30px rgba(255, 75, 43, 0.6);
+        .progress-text {
+            color: var(--cyan-text);
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'Courier New', Courier, monospace; /* Terminal style */
+            text-transform: lowercase;
+            letter-spacing: 2px;
+            min-width: 180px;
+            text-align: center;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
         }
 
-        @keyframes pulse-mic {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7); }
-            70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(255, 75, 43, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+        .progress-blocks {
+            display: flex;
+            gap: 6px;
         }
+
+        .progress-blocks span {
+            display: block;
+            width: 14px;
+            height: 28px;
+            background-color: var(--red-bar-dark);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+
+        /* Animation to make blocks light up like a progress meter */
+        @keyframes blockFlash {
+            0%, 100% { background-color: var(--red-bar-dark); box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
+            50% { background-color: #ff4d4d; box-shadow: 0 0 10px #ff4d4d; }
+        }
+
+        .red-progress-bar.active .progress-blocks span {
+            animation: blockFlash 1.2s infinite;
+        }
+
+        /* Staggered animation delays for the block effect */
+        .red-progress-bar.active .progress-blocks span:nth-child(1) { animation-delay: 0.0s; }
+        .red-progress-bar.active .progress-blocks span:nth-child(2) { animation-delay: 0.2s; }
+        .red-progress-bar.active .progress-blocks span:nth-child(3) { animation-delay: 0.4s; }
+        .red-progress-bar.active .progress-blocks span:nth-child(4) { animation-delay: 0.6s; }
 
         .hidden {
             display: none !important;
+            opacity: 0;
+            pointer-events: none;
         }
 
         @media (min-width: 768px) {
             .ui-layer { padding: 40px; }
-            .round-btn { width: 80px; height: 80px; }
-            .go-btn { font-size: 20px; }
-            .auth-btn { font-size: 30px; }
+            .go-btn { width: 90px; height: 90px; font-size: 22px; }
+            .red-progress-bar { bottom: 15%; padding: 15px 40px; }
+            .progress-text { font-size: 36px; min-width: 240px; }
+            .progress-blocks span { width: 18px; height: 36px; }
         }
     </style>
 </head>
@@ -195,11 +226,22 @@
 
     <div class="ui-layer">
         <div id="emptySpace"></div>
+        
         <div class="controls-container">
-            <div id="statusText" class="status-text">System Standby</div>
+            <!-- GO Button -->
             <div class="button-group">
-                <button id="goBtn" class="round-btn go-btn" title="Click to Start">GO</button>
-                <button id="authBtn" class="round-btn auth-btn hidden" title="Click to Authenticate">🎙️</button>
+                <button id="goBtn" class="go-btn" title="Click to Start">GO</button>
+            </div>
+        </div>
+
+        <!-- Red Progress Bar (Hidden by Default) -->
+        <div id="redProgressBar" class="red-progress-bar hidden">
+            <div class="progress-blocks">
+                <span></span><span></span><span></span><span></span>
+            </div>
+            <div id="progressText" class="progress-text">Processing</div>
+            <div class="progress-blocks">
+                <span></span><span></span><span></span><span></span>
             </div>
         </div>
     </div>
@@ -207,8 +249,7 @@
     <script>
         let isSystemLocked = true;
         let failedAttempts = 0; 
-        let authTimer = null;
-        let hasMicPermission = false; // Flag to ensure browser prompts only once
+        let hasMicPermission = false; 
         
         const _0xPwdArray = [
             [104, 105, 32, 105, 32, 97, 109, 32, 106, 97, 99, 107, 105, 101, 32, 98, 117, 100, 100, 121, 32, 99, 111, 111, 108], 
@@ -223,15 +264,14 @@
             askPassword_voice: 'firstvideo.mp4',                                             
             accessGranted: 'secondvideo.mp4',
             accessDenied: 'thirdvideo.mp4',    
-            accessDeniedMax: 'fourthvideo.mp4',                
-            listening: 'https://cdn.pixabay.com/video/2020/05/11/38838-422176495_tiny.mp4'
+            accessDeniedMax: 'fourthvideo.mp4'
         };
 
         const videoElement = document.getElementById('assistantVideo');
         const overlayElement = document.querySelector('.video-overlay');
-        const statusText = document.getElementById('statusText');
         const goBtn = document.getElementById('goBtn');
-        const authBtn = document.getElementById('authBtn');
+        const redProgressBar = document.getElementById('redProgressBar');
+        const progressText = document.getElementById('progressText');
         const mainWindow = document.getElementById('mainWindow');
         const emptySpace = document.getElementById('emptySpace');
 
@@ -263,6 +303,7 @@
             videoElement.play().catch(e => console.log("Video Play Error:", e));
         }
 
+        // Initialize with locked video directly
         setVideoState('locked');
 
         videoElement.addEventListener('ended', () => {
@@ -283,25 +324,24 @@
             isSystemLocked = false;
             emptySpace.style.display = 'none';
             mainWindow.style.display = 'block';
-            statusText.innerText = ""; 
             goBtn.classList.add('hidden');
-            authBtn.classList.add('hidden'); 
+            redProgressBar.classList.add('hidden');
+            redProgressBar.classList.remove('active');
             setVideoState('none');
         }
 
         // ONE-TIME PERMISSION LOGIC
         async function requestMicrophoneAccess() {
-            if (hasMicPermission) return true; // Skip browser prompt if already allowed this session
+            if (hasMicPermission) return true; 
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
-                hasMicPermission = true; // Mark as permitted
+                hasMicPermission = true; 
                 return true;
             } catch (err) {
                 console.error("Microphone access denied:", err);
-                statusText.innerText = "Microphone Permission Required";
-                statusText.style.color = "var(--error-color)";
+                alert("Microphone Permission Required to Proceed.");
                 return false;
             }
         }
@@ -316,58 +356,67 @@
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 5; 
 
+            // 1. Listening Phase replaced with Processing
             recognition.onstart = () => {
-                statusText.innerText = "Listening...";
-                statusText.style.color = "var(--accent-color)";
-                authBtn.classList.add('listening');
+                progressText.innerText = "Processing";
             };
 
+            // 2. Processing Phase (Audio captured, waiting for engine)
             recognition.onspeechend = () => {
                 recognition.stop();
-                authBtn.classList.remove('listening');
+                progressText.innerText = "Processing";
             };
 
+            // 3. Recognizing Phase
             recognition.onresult = (event) => {
-                if (isSystemLocked) {
-                    statusText.innerText = `Analyzing Voice...`;
-                    let isMatchFound = false;
-                    
-                    for (let i = 0; i < event.results[0].length; i++) {
-                        let alt = event.results[0][i].transcript.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " ");
-                        if (validPasswords.some(pwd => alt.includes(pwd) || alt === pwd)) {
-                            isMatchFound = true;
-                            break;
-                        }
-                    }
+                progressText.innerText = "recognising";
+                
+                // Keep the exact spoken text hidden as requested
 
-                    if (isMatchFound) {
-                        failedAttempts = 0;
-                        statusText.innerText = "Authentication Successful.";
-                        statusText.style.color = "var(--success-color)";
-                        setVideoState('accessGranted');
-                    } else {
-                        failedAttempts++;
-                        if (failedAttempts >= 3) {
-                            statusText.innerText = "Maximum attempts reached. Intruder detected.";
-                            statusText.style.color = "var(--error-color)";
-                            setVideoState('accessDeniedMax');
-                            failedAttempts = 0;
-                        } else {
-                            statusText.innerText = "";
-                            setVideoState('accessDenied');
+                // Delay execution slightly so the user sees the "recognising" state animation
+                setTimeout(() => {
+                    if (isSystemLocked) {
+                        let isMatchFound = false;
+                        const rawTranscript = event.results[0][0].transcript;
+                        
+                        for (let i = 0; i < event.results[0].length; i++) {
+                            let alt = event.results[0][i].transcript.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " ");
+                            if (validPasswords.some(pwd => alt.includes(pwd) || alt === pwd)) {
+                                isMatchFound = true;
+                                break;
+                            }
                         }
+
+                        if (isMatchFound) {
+                            failedAttempts = 0;
+                            progressText.innerText = "granted";
+                            progressText.style.color = "var(--success-color)";
+                            setVideoState('accessGranted');
+                        } else {
+                            failedAttempts++;
+                            if (failedAttempts >= 3) {
+                                progressText.innerText = "intruder";
+                                progressText.style.color = "#ffffff";
+                                setVideoState('accessDeniedMax');
+                                failedAttempts = 0;
+                            } else {
+                                progressText.innerText = "denied";
+                                progressText.style.color = "#ffffff";
+                                setVideoState('accessDenied');
+                            }
+                        }
+                    } else {
+                        const rawTranscript = event.results[0][0].transcript;
+                        const cleanCommand = rawTranscript.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " "); 
+                        processCommand(cleanCommand);
                     }
-                } else {
-                    const transcript = event.results[0][0].transcript.toLowerCase();
-                    const cleanCommand = transcript.replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " "); 
-                    processCommand(cleanCommand);
-                }
+                }, 1500); 
             };
 
             recognition.onerror = (event) => {
-                statusText.innerText = 'Audio lost or timed out.';
-                statusText.style.color = 'var(--error-color)';
-                authBtn.classList.remove('listening');
+                progressText.innerText = "error";
+                progressText.style.color = "#ffffff";
+                
                 setTimeout(() => {
                     if (isSystemLocked && currentVideoState !== 'accessGranted' && currentVideoState !== 'accessDenied') {
                         lockSystem();
@@ -375,47 +424,40 @@
                 }, 2000);
             };
         } else {
-            statusText.innerText = "Speech recognition unsupported on this browser.";
+            alert("Speech recognition unsupported on this browser.");
         }
 
         /* --- GO BUTTON CLICK FLOW --- */
-        goBtn.addEventListener('click', () => {
-            statusText.innerText = "";
-            goBtn.classList.add('hidden');
-            setVideoState('askPassword_voice');
-
-            clearTimeout(authTimer);
-            authTimer = setTimeout(() => {
-                authBtn.classList.remove('hidden');
-            }, 5500);
-        });
-
-        /* --- AUTHENTICATE BUTTON CLICK FLOW --- */
-        authBtn.addEventListener('click', async () => {
+        goBtn.addEventListener('click', async () => {
             if (!recognition) {
                 alert("Voice Engine is unsupported on this browser.");
                 return;
             }
 
-            // Checks permission once; skips popup on subsequent clicks
+            // Play the requested sound immediately upon click
+            const startSound = new Audio("Screen Recording 2026-08-27 161210-[AudioTrimmer.com].mp3");
+            startSound.play().catch(e => console.warn("Audio play blocked or failed:", e));
+
+            // Request permission. If denied, stop.
             const micPermitted = await requestMicrophoneAccess();
             if (!micPermitted) return;
 
+            // Direct start - hide GO button, trigger video, show red animation bar
+            goBtn.classList.add('hidden');
+            
+            // This setVideoState plays firstvideo.mp4 as per the videoLibrary dictionary
+            setVideoState('askPassword_voice'); 
+            
+            progressText.style.color = "var(--cyan-text)"; // Reset color if previously denied
+            redProgressBar.classList.remove('hidden');
+            redProgressBar.classList.add('active'); // Starts block animations
+
             if (isSystemLocked) {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
-                statusText.innerText = "Authenticating...";
-                statusText.style.color = "var(--accent-color)";
-                
                 try {
                     recognition.start();
                 } catch (e) {
                     console.log("Recognition active state error:", e);
-                }
-            } else {
-                try { 
-                    recognition.start(); 
-                } catch (e) { 
-                    console.log("Recognition error:", e); 
                 }
             }
         });
@@ -424,22 +466,20 @@
             if (command.includes("lock system") || command.includes("close pc") || command.includes("lock workspace")) {
                 lockSystem();
             } else {
-                statusText.innerText = "Command received.";
+                console.log("Command received in background.");
             }
         }
 
         function lockSystem() {
-            clearTimeout(authTimer);
             isSystemLocked = true;
             emptySpace.style.display = 'block';
             mainWindow.style.display = 'none';
             
+            // Hide Red Progress Bar and show GO Button
+            redProgressBar.classList.add('hidden');
+            redProgressBar.classList.remove('active');
             goBtn.classList.remove('hidden');
-            authBtn.classList.add('hidden');
-            authBtn.classList.remove('listening');
             
-            statusText.innerText = "System Standby";
-            statusText.style.color = "rgba(255, 255, 255, 0.7)";
             setVideoState('locked'); 
         }
     </script>
